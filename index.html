@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Centering · Messwerkstatt</title>
+<title>Centering · Card Workshop</title>
 <style>
   :root {
     --bg: oklch(0.955 0.008 75);
@@ -178,97 +178,97 @@
 <body>
 <div class="app">
 <header class="top">
-  <div class="brand"><h1>Centering</h1><span>Messwerkstatt für Sammelkarten</span></div>
-  <div class="seg" role="group" aria-label="Kartenseite">
-    <button data-side="front">Vorderseite</button>
-    <button data-side="back">Rückseite</button>
+  <div class="brand"><h1>Centering</h1><span>Measuring workshop for trading cards</span></div>
+  <div class="seg" role="group" aria-label="Card side">
+    <button data-side="front">Front</button>
+    <button data-side="back">Back</button>
   </div>
 </header>
 <main id="drop">
-  <section aria-label="Messfläche">
+  <section aria-label="Measuring area">
     <div class="toolbar">
       <div class="group">
-        <label class="btn primary">Foto laden<input type="file" accept="image/*" id="file" hidden></label>
-        <button class="btn" id="warp" title="Perspektive über die 4 Kartenecken korrigieren">Entzerren</button>
+        <label class="btn primary">Load photo<input type="file" accept="image/*" id="file" hidden></label>
+        <button class="btn" id="warp" title="Correct perspective from the 4 card corners">Straighten</button>
       </div>
       <div class="group">
-        <span class="lbl">Messung</span>
-        <div class="seg" role="group" aria-label="Messart">
-          <button data-mode="lines" title="Je 4 Linien über die ganze Karte">Linien</button>
-          <button data-mode="points" title="Je Achse 2 Messstrecken mit 4 Punkten">Punkte</button>
+        <span class="lbl">Measure</span>
+        <div class="seg" role="group" aria-label="Measuring mode">
+          <button data-mode="lines" title="4 lines across the whole card per axis">Lines</button>
+          <button data-mode="points" title="2 segments with 4 points per axis">Points</button>
         </div>
-        <button class="btn ghost" id="reset" title="Linien und Punkte auf Standard setzen">Zurücksetzen</button>
+        <button class="btn ghost" id="reset" title="Reset lines and points">Reset</button>
       </div>
       <div class="group">
-        <span class="lbl">Lupe</span>
-        <div class="seg" role="group" aria-label="Lupe (Taste L)">
-          <button data-lupe="off">Aus</button>
-          <button data-lupe="corner">Ecke</button>
+        <span class="lbl">Loupe</span>
+        <div class="seg" role="group" aria-label="Loupe (key L)">
+          <button data-lupe="off">Off</button>
+          <button data-lupe="corner">Corner</button>
           <button data-lupe="cursor">Cursor</button>
         </div>
-        <input type="range" id="lupeZoom" min="1.5" max="12" step="0.5" value="4" aria-label="Lupen-Zoom">
+        <input type="range" id="lupeZoom" min="1.5" max="12" step="0.5" value="4" aria-label="Loupe zoom">
         <output class="zoomval" id="lupeZoomOut" for="lupeZoom">4×</output>
       </div>
       <div class="group rot">
-        <span class="lbl">Drehung</span>
-        <input type="range" id="angle" min="-5" max="5" step="0.01" value="0" aria-label="Drehung">
-        <button class="btn icon" id="rotL" title="−0,01° (Q)" aria-label="Gegen den Uhrzeigersinn">↺</button>
-        <input type="number" id="angleNum" min="-5" max="5" step="0.01" value="0" aria-label="Drehung in Grad">
-        <button class="btn icon" id="rotR" title="+0,01° (E)" aria-label="Im Uhrzeigersinn">↻</button>
+        <span class="lbl">Rotate</span>
+        <input type="range" id="angle" min="-5" max="5" step="0.01" value="0" aria-label="Rotation">
+        <button class="btn icon" id="rotL" title="−0.01° (Q)" aria-label="Counterclockwise">↺</button>
+        <input type="number" id="angleNum" min="-5" max="5" step="0.01" value="0" aria-label="Rotation in degrees">
+        <button class="btn icon" id="rotR" title="+0.01° (E)" aria-label="Clockwise">↻</button>
         <button class="btn ghost" id="rot0">0°</button>
       </div>
     </div>
     <div class="notice" id="warpbar" hidden>
-      <p><strong>Ecken setzen:</strong> die 4 gelben Punkte auf die Kartenecken ziehen, bei runden Ecken auf den Schnittpunkt der Kanten.</p>
-      <select id="fmt" aria-label="Kartenformat">
+      <p><strong>Set corners:</strong> drag the 4 yellow points onto the card corners; for rounded corners, use where the edges would meet.</p>
+      <select id="fmt" aria-label="Card format">
         <option value="63x88">63 × 88 mm · Pokémon, One Piece, MTG, Lorcana</option>
-        <option value="59x86">59 × 86 mm · Yu-Gi-Oh!, japanische Kleinformate</option>
+        <option value="59x86">59 × 86 mm · Yu-Gi-Oh!, Japanese small size</option>
       </select>
-      <button class="btn primary" id="warpApply">Anwenden</button>
-      <button class="btn" id="warpCancel">Abbrechen</button>
-      <button class="btn ghost" id="warpUndo" hidden>Original wiederherstellen</button>
+      <button class="btn primary" id="warpApply">Apply</button>
+      <button class="btn" id="warpCancel">Cancel</button>
+      <button class="btn ghost" id="warpUndo" hidden>Restore original</button>
     </div>
     <div class="stage" id="stage">
-      <div class="canvas-wrap"><canvas id="cv" tabindex="0" aria-label="Kartenfoto mit Messlinien"></canvas></div>
+      <div class="canvas-wrap"><canvas id="cv" tabindex="0" aria-label="Card photo with measuring lines"></canvas></div>
       <div class="empty" id="empty" hidden>
-        <strong>Kartenfoto hier ablegen</strong>
-        <label class="btn primary">Foto laden<input type="file" accept="image/*" id="file2" hidden></label>
-        <span>oder aus der Zwischenablage einfügen (⌘/Strg + V)</span>
+        <strong>Drop a card photo here</strong>
+        <label class="btn primary">Load photo<input type="file" accept="image/*" id="file2" hidden></label>
+        <span>or paste from the clipboard (⌘/Ctrl + V)</span>
       </div>
     </div>
     <div class="below">
-      <div class="legend"><span><i></i>Kartenrand</span><span><i class="in"></i>Innenrahmen</span></div>
+      <div class="legend"><span><i></i>Card edge</span><span><i class="in"></i>Inner frame</span></div>
       <span id="msg" role="status" aria-live="polite"></span>
     </div>
     <details class="help">
-      <summary>Bedienung</summary>
+      <summary>How to use</summary>
       <ul>
-        <li>Linien oder Punkte ziehen. Mit <kbd>Alt</kbd> gedrückt bewegen sie sich 10× feiner; ausgewählte mit den Pfeiltasten verschieben (<kbd>Shift</kbd> = grob).</li>
-        <li><b>Punkte:</b> je Achse 2 Messstrecken mit außen, innen, innen, außen. Ergebnis ist der Mittelwert; die Strecken dürfen leicht schräg liegen.</li>
-        <li><b>Drehung:</b> <kbd>Q</kbd> / <kbd>E</kbd> ±0,01°, mit <kbd>Shift</kbd> ±0,1°, mit <kbd>Alt</kbd> ±0,001°.</li>
-        <li><b>Lupe:</b> <kbd>L</kbd> wechselt Aus, Ecke, Cursor. Zoom per Regler oder Mausrad über dem Bild.</li>
-        <li><b>Entzerren:</b> für schräg fotografierte Karten. Das Original bleibt gespeichert.</li>
-        <li>Ein neues Foto auf eine belegte Seite legt automatisch eine neue Karte an.</li>
+        <li>Drag lines or points. Hold <kbd>Alt</kbd> to move 10× finer; nudge the selected one with the arrow keys (<kbd>Shift</kbd> = coarse).</li>
+        <li><b>Points:</b> 2 segments per axis, each outer, inner, inner, outer. The result is their average; segments may be slightly tilted.</li>
+        <li><b>Rotate:</b> <kbd>Q</kbd> / <kbd>E</kbd> ±0.01°, with <kbd>Shift</kbd> ±0.1°, with <kbd>Alt</kbd> ±0.001°.</li>
+        <li><b>Loupe:</b> <kbd>L</kbd> cycles off, corner, cursor. Zoom with the slider or the mouse wheel over the image.</li>
+        <li><b>Straighten:</b> for cards photographed at an angle. The original is kept.</li>
+        <li>A new photo on a side that already has one creates a new card.</li>
       </ul>
     </details>
   </section>
-  <aside aria-label="Ergebnis">
+  <aside aria-label="Result">
     <div class="readout" id="result"></div>
     <div>
-      <h2>Bestmögliche Note fürs Centering</h2>
+      <h2>Best possible centering grade</h2>
       <table id="grades"></table>
       <details class="fine">
-        <summary>Wie gerechnet wird</summary>
-        <p>Gewertet wird die schlechtere Achse. Schwellen: edgegrading.com (PSA ab 2025, BGS, SGC, EDGE), cgccards.com (CGC; Rückseite ab Note 8 nicht veröffentlicht, wie PSA angenommen), taggrading.com (TAG, Rückseite TCG). Bei BGS ist die 10 „Pristine“, Gem Mint ist 9.5.</p>
-        <p>AOG vergibt 0 bis 100 Punkte: je Achse sind 5 % Unterschied frei, jedes weitere Prozent kostet einen Punkt. OC (off-center) ab 50 Punkten oder weniger oder 2/3 zu 1/3. „Gesamt“ gewichtet Vorderseite 100 %, Rückseite 70 %.</p>
+        <summary>How it is calculated</summary>
+        <p>The worse axis counts. Thresholds: edgegrading.com (PSA since 2025, BGS, SGC, EDGE), cgccards.com (CGC; back from grade 8 down is unpublished, assumed as PSA), taggrading.com (TAG, TCG back). At BGS the 10 is “Pristine”, Gem Mint is 9.5.</p>
+        <p>AOG scores 0 to 100: per axis a 5 % difference is free, each further percent costs one point. Off-center (OC) at 50 or less, or 2/3 to 1/3. “Total” weights front 100 %, back 70 %.</p>
       </details>
     </div>
     <div>
-      <h2>Karten</h2>
+      <h2>Cards</h2>
       <div class="cardbar">
-        <input type="text" id="name" aria-label="Name der Karte">
-        <button class="btn" id="new" title="Neue Karte">Neu</button>
-        <button class="btn ghost" id="del" title="Karte löschen">Löschen</button>
+        <input type="text" id="name" aria-label="Card name">
+        <button class="btn" id="new" title="New card">New</button>
+        <button class="btn ghost" id="del" title="Delete card">Delete</button>
       </div>
       <ul id="cards"></ul>
     </div>
@@ -276,7 +276,7 @@
 </main>
 </div>
 <script>
-// Max. Abweichung der größeren Seite in % für Note [10, 9, 8, 7]
+// Max. share of the larger side in % for grade [10, 9, 8, 7]
 const GRADES = {
   front: { PSA:[55,60,65,70], CGC:[55,60,65,70], BGS:[50,55,60,65], SGC:[55,60,65,70], TAG:[55,60,65,70], EDGE:[55,60,70,75] },
   back:  { PSA:[75,90,90,90], CGC:[75,90,90,90], BGS:[50,70,80,90], SGC:[55,60,65,70], TAG:[65,75,95,99], EDGE:[70,80,90,90] },
@@ -288,7 +288,7 @@ const defPts = () => ({
   tb: [.3, .7].map(x => [.03, .06, .94, .97].map(y => [x, y])),
 });
 const DEF = () => ({ angle: 0, mode: 'lines', v: [.03, .08, .92, .97], h: [.03, .06, .94, .97], pts: defPts() });
-const newCard = n => ({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: 'Karte ' + n, front: DEF(), back: DEF(), has: { front: false, back: false } });
+const newCard = n => ({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: 'Card ' + n, front: DEF(), back: DEF(), has: { front: false, back: false } });
 
 // Images live in IndexedDB (localStorage's ~5 MB fills after a few photos); card metadata in localStorage.
 const idb = new Promise((res, rej) => {
@@ -355,7 +355,7 @@ async function setImage(file) {
   const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
   msg.textContent = '';
   try { await imgPut(DB.cur + ':' + side, blob); card().has[side] = true; }
-  catch { msg.textContent = 'Bild konnte nicht gespeichert werden – es bleibt nur bis zum Neuladen erhalten.'; }
+  catch { msg.textContent = 'Photo could not be saved; it is kept only until you reload.'; }
   if (imgs[side]) URL.revokeObjectURL(imgs[side].src);
   imgs[side] = await blobImg(blob);
   card()[side] = DEF();
@@ -576,14 +576,14 @@ function update() {
   const m = measure(st()), c = card();
   const has = c.has[side];
   document.getElementById('result').innerHTML = `
-    <div class="meta"><b>${esc(c.name)}</b><span>${side === 'front' ? 'Vorderseite' : 'Rückseite'}</span></div>
-    <div class="figure">${has ? m.worst.toFixed(1) + '<small> / ' + (100 - m.worst).toFixed(1) + '</small>' : '<small>kein Foto</small>'}</div>
-    <div class="axis"><span>Links / Rechts</span><span>${has ? fmt(m.lr) : '–'}</span></div>
-    <div class="axis"><span>Oben / Unten</span><span>${has ? fmt(m.tb) : '–'}</span></div>
-    ${m.parts && has ? `<div class="parts">L/R oben ${fmt(m.parts.lr[0])} · unten ${fmt(m.parts.lr[1])}<br>O/U links ${fmt(m.parts.tb[0])} · rechts ${fmt(m.parts.tb[1])}</div>` : ''}`;
+    <div class="meta"><b>${esc(c.name)}</b><span>${side === 'front' ? 'Front' : 'Back'}</span></div>
+    <div class="figure">${has ? m.worst.toFixed(1) + '<small> / ' + (100 - m.worst).toFixed(1) + '</small>' : '<small>no photo</small>'}</div>
+    <div class="axis"><span>Left / Right</span><span>${has ? fmt(m.lr) : '–'}</span></div>
+    <div class="axis"><span>Top / Bottom</span><span>${has ? fmt(m.tb) : '–'}</span></div>
+    ${m.parts && has ? `<div class="parts">L/R top ${fmt(m.parts.lr[0])} · bottom ${fmt(m.parts.lr[1])}<br>T/B left ${fmt(m.parts.tb[0])} · right ${fmt(m.parts.tb[1])}</div>` : ''}`;
   const ms = { front: c.has.front && measure(c.front), back: c.has.back && measure(c.back) };
   const cell = g => g === undefined ? '<td class="na">–</td>' : g == null ? '<td class="glow">&lt;7</td>' : `<td class="${g === 10 ? 'g10' : ''}">${g}</td>`;
-  let html = '<tr><th>Grader</th><th>Vorne</th><th>Hinten</th><th>Gesamt</th></tr>';
+  let html = '<tr><th>Grader</th><th>Front</th><th>Back</th><th>Total</th></tr>';
   for (const co of Object.keys(GRADES.front)) {
     const f = ms.front ? grade(ms.front.worst, GRADES.front[co]) : undefined;
     const b = ms.back ? grade(ms.back.worst, GRADES.back[co]) : undefined;
@@ -599,8 +599,8 @@ function update() {
 
 function renderList() {
   listEl.innerHTML = DB.list.map(c => {
-    const sum = [c.has.front && 'V ' + fmtW(measure(c.front).worst), c.has.back && 'H ' + fmtW(measure(c.back).worst)].filter(Boolean).join(' · ');
-    return `<li><button data-id="${c.id}" aria-pressed="${c.id === DB.cur}"><span>${esc(c.name)}</span><small>${sum || 'leer'}</small></button></li>`;
+    const sum = [c.has.front && 'F ' + fmtW(measure(c.front).worst), c.has.back && 'B ' + fmtW(measure(c.back).worst)].filter(Boolean).join(' · ');
+    return `<li><button data-id="${c.id}" aria-pressed="${c.id === DB.cur}"><span>${esc(c.name)}</span><small>${sum || 'empty'}</small></button></li>`;
   }).join('');
 }
 
@@ -639,7 +639,7 @@ document.getElementById('rot0').onclick = () => setAngle(0);
 const zoomEl = document.getElementById('lupeZoom'), zoomOut = document.getElementById('lupeZoomOut');
 function setZoom(z) {
   lupeZ = Math.round(Math.min(12, Math.max(1.5, z)) * 10) / 10;
-  zoomEl.value = lupeZ; zoomOut.textContent = lupeZ.toFixed(1).replace('.0', '').replace('.', ',') + '×';
+  zoomEl.value = lupeZ; zoomOut.textContent = lupeZ.toFixed(1).replace('.0', '') + '×';
   try { localStorage.setItem('cc-lupe-z', lupeZ); } catch {}
   draw();
 }
@@ -660,12 +660,12 @@ document.addEventListener('keydown', e => {
   else if (k === 'KeyE') setAngle(st().angle + rotStep(e));
 });
 
-nameEl.oninput = () => { card().name = nameEl.value || 'Unbenannt'; save(); update(); };
+nameEl.oninput = () => { card().name = nameEl.value || 'Untitled'; save(); update(); };
 listEl.onclick = e => { const b = e.target.closest('[data-id]'); if (b) selectCard(b.dataset.id); };
 document.getElementById('new').onclick = () => { const c = newCard(DB.list.length + 1); DB.list.unshift(c); selectCard(c.id); };
 document.getElementById('del').onclick = async () => {
   const c = card();
-  if (!confirm(`„${c.name}“ mit beiden Bildern löschen?`)) return;
+  if (!confirm(`Delete “${c.name}” and both photos?`)) return;
   await Promise.all(['front', 'back'].flatMap(s => [c.id + ':' + s, c.id + ':' + s + ':orig']).map(k => imgDel(k).catch(() => {})));
   DB.list = DB.list.filter(x => x !== c);
   if (!DB.list.length) DB.list.push(newCard(1));
@@ -756,7 +756,7 @@ function fitToCard({ m, w, h }) {
 async function applyWarp() {
   const { img, prev, corners } = warpEdit, s = st(), key = imgKey(), fmt = fmtEl.value;
   const [a, b] = fmt.split('x').map(Number);
-  msg.textContent = 'Entzerre …';
+  msg.textContent = 'Straightening…';
   await new Promise(r => setTimeout(r, 30)); // let the message paint before the blocking loop
   const res = warp(img, corners, a / b);
   const blob = await new Promise(r => res.canvas.toBlob(r, 'image/jpeg', 0.92));
@@ -764,7 +764,7 @@ async function applyWarp() {
   try {
     if (!s.warp) { const orig = await imgGet(key); if (orig) await imgPut(key + ':orig', orig); } // keep the untouched photo once
     await imgPut(key, blob);
-  } catch { msg.textContent = 'Entzerrtes Bild konnte nicht gespeichert werden.'; }
+  } catch { msg.textContent = 'Straightened photo could not be saved.'; }
   URL.revokeObjectURL(prev.src); if (img !== prev) URL.revokeObjectURL(img.src);
   warpEdit = null; warpBar.hidden = true;
   imgs[side] = await blobImg(blob);
@@ -774,7 +774,7 @@ async function applyWarp() {
 
 async function undoWarp() {
   const key = imgKey(), orig = await imgGet(key + ':orig').catch(() => null);
-  if (!orig || !confirm('Entzerrung verwerfen und Originalfoto wiederherstellen?')) return;
+  if (!orig || !confirm('Discard straightening and restore the original photo?')) return;
   await imgPut(key, orig); await imgDel(key + ':orig');
   const shown = warpEdit.prev; endWarp(); URL.revokeObjectURL(shown.src);
   imgs[side] = await blobImg(orig);
