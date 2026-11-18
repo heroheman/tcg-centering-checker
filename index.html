@@ -1,0 +1,833 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Centering · Messwerkstatt</title>
+<style>
+  :root {
+    --bg: oklch(0.955 0.008 75);
+    --surface: oklch(0.985 0.005 75);
+    --sunken: oklch(0.925 0.01 75);
+    --line: oklch(0.86 0.012 70);
+    --line-strong: oklch(0.7 0.014 65);
+    --fg: oklch(0.24 0.012 60);
+    --mut: oklch(0.47 0.014 60);
+    --accent: oklch(0.57 0.165 38);
+    --accent-ink: oklch(0.985 0.01 60);
+    --accent-soft: oklch(0.57 0.165 38 / .1);
+    --ok: oklch(0.5 0.13 150);
+    --bad: oklch(0.53 0.17 28);
+    --stage: #1a1714;
+    --stage-fg: oklch(0.9 0.01 75);
+    --outer: #3fd0e8; --inner: #f06bb0;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --r: 8px;
+    --ease: cubic-bezier(.22, 1, .36, 1);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: oklch(0.185 0.008 60);
+      --surface: oklch(0.23 0.009 60);
+      --sunken: oklch(0.16 0.008 60);
+      --line: oklch(0.32 0.01 60);
+      --line-strong: oklch(0.46 0.012 60);
+      --fg: oklch(0.93 0.008 75);
+      --mut: oklch(0.7 0.012 70);
+      --accent: oklch(0.72 0.15 45);
+      --accent-ink: oklch(0.2 0.03 45);
+      --accent-soft: oklch(0.72 0.15 45 / .14);
+      --ok: oklch(0.78 0.14 150);
+      --bad: oklch(0.72 0.15 28);
+      --stage: #110f0d;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 var(--sans); }
+  .app { max-width: 1440px; margin: 0 auto; padding: 0 20px 48px; }
+
+  /* Header with a ruler edge */
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0 20px; position: relative; flex-wrap: wrap; }
+  .top::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 10px; pointer-events: none;
+    border-bottom: 1px solid var(--line-strong);
+    background:
+      repeating-linear-gradient(90deg, var(--line-strong) 0 1px, transparent 1px 50px) left bottom / 100% 10px no-repeat,
+      repeating-linear-gradient(90deg, var(--line-strong) 0 1px, transparent 1px 10px) left bottom / 100% 5px no-repeat;
+    opacity: .7;
+  }
+  .brand { display: flex; align-items: baseline; gap: 12px; }
+  h1 { font-size: 22px; line-height: 1.1; letter-spacing: -.01em; margin: 0; font-weight: 650; }
+  .brand span { font: 12px/1 var(--mono); color: var(--mut); letter-spacing: .04em; }
+
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 28px; padding-top: 22px; }
+  @media (max-width: 980px) { main { grid-template-columns: 1fr; gap: 24px; } }
+
+  /* Controls */
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; margin-bottom: 12px; }
+  .group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .group > .lbl { font: 11px/1 var(--mono); color: var(--mut); letter-spacing: .06em; text-transform: uppercase; margin-right: 4px; }
+  .btn, select, input[type=number], input[type=text] {
+    font: inherit; font-size: 13px; color: var(--fg); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 6px; height: 34px;
+    transition: border-color .15s var(--ease), background-color .15s var(--ease);
+  }
+  .btn { appearance: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 12px; cursor: pointer; white-space: nowrap; }
+  .btn:hover { border-color: var(--line-strong); }
+  .btn:active { background: var(--sunken); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
+  .btn.primary:hover { filter: brightness(1.06); }
+  .btn.ghost { background: transparent; border-color: transparent; color: var(--mut); }
+  .btn.ghost:hover { color: var(--fg); background: var(--sunken); }
+  .btn.icon { width: 34px; padding: 0; font-size: 15px; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  select, input[type=number], input[type=text] { padding: 0 10px; }
+  input[type=number] { width: 78px; font-family: var(--mono); text-align: right; }
+  input[type=range] { accent-color: var(--accent); width: 150px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .seg { display: inline-flex; background: var(--sunken); border: 1px solid var(--line); border-radius: 7px; padding: 2px; gap: 2px; }
+  .seg button { appearance: none; font: inherit; font-size: 13px; color: var(--mut); background: transparent; border: 0; border-radius: 5px; height: 28px; padding: 0 11px; cursor: pointer; transition: color .15s var(--ease), background-color .15s var(--ease); }
+  .seg button:hover { color: var(--fg); }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px oklch(0.2 0.02 60 / .18); font-weight: 600; }
+  .zoomval { font: 12px var(--mono); color: var(--mut); min-width: 3.2em; }
+
+  @media (max-width: 640px) {
+    .app { padding: 0 16px 40px; }
+    .brand span { display: none; }
+    .toolbar { gap: 10px; }
+    .group { width: 100%; }
+    .group > .lbl { width: 72px; margin: 0; }
+    .group input[type=range] { flex: 1 1 120px; width: auto; }
+    .stage { padding: 8px; min-height: 300px; }
+    .rot input[type=range] { flex-basis: calc(100% - 78px); }
+    .rot #rotL { margin-left: 78px; } /* second row lines up under the slider */
+  }
+  @media (pointer: coarse) {
+    .btn, select, input[type=number], input[type=text] { height: 42px; }
+    .btn.icon { width: 42px; }
+    .seg button { height: 36px; padding: 0 14px; }
+    input[type=range] { width: 180px; }
+  }
+
+  /* Warp notice */
+  .notice { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 12px; margin-bottom: 12px; border-radius: var(--r); background: var(--accent-soft); border: 1px solid color-mix(in oklch, var(--accent) 35%, transparent); }
+  .notice p { margin: 0 8px 0 0; flex: 1 1 260px; font-size: 13px; }
+
+  /* Stage */
+  .stage { position: relative; background: var(--stage); border-radius: 10px; padding: 14px; min-height: 380px; display: grid; place-items: center; }
+  .canvas-wrap { width: 100%; display: flex; justify-content: center; }
+  canvas { display: block; touch-action: none; outline: none; border-radius: 3px; }
+  canvas:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+  .empty { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 12px; color: var(--stage-fg); text-align: center; padding: 24px; }
+  .empty strong { font-size: 17px; font-weight: 600; }
+  .empty span { font-size: 13px; opacity: .7; }
+  .stage.dragover { outline: 2px dashed var(--accent); outline-offset: -8px; }
+
+  .below { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 20px; margin-top: 10px; font-size: 12px; color: var(--mut); }
+  .legend { display: flex; gap: 16px; align-items: center; }
+  .legend i { display: inline-block; width: 22px; vertical-align: middle; margin-right: 6px; border-top: 2px solid var(--outer); }
+  .legend i.in { border-top-style: dashed; border-color: var(--inner); }
+  #msg { color: var(--accent); }
+
+  details.help { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; font-size: 13px; color: var(--mut); }
+  details.help summary { cursor: pointer; color: var(--fg); font-weight: 600; width: fit-content; }
+  details.help ul { margin: 10px 0 0; padding-left: 18px; display: grid; gap: 5px; max-width: 75ch; }
+  kbd { font: 11px var(--mono); background: var(--surface); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; color: var(--fg); }
+
+  /* Readout panel */
+  aside { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+  .readout { background: var(--sunken); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px 12px; }
+  .readout .meta { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--mut); }
+  .readout .meta b { color: var(--fg); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .figure { font: 600 38px/1.1 var(--mono); letter-spacing: -.02em; margin: 8px 0 10px; font-variant-numeric: tabular-nums; }
+  .figure small { font-size: 15px; color: var(--mut); font-weight: 500; letter-spacing: 0; }
+  .axis { display: flex; justify-content: space-between; padding: 5px 0; border-top: 1px solid var(--line); font-size: 13px; }
+  .axis span:last-child { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .parts { font: 11.5px/1.6 var(--mono); color: var(--mut); padding-top: 6px; border-top: 1px solid var(--line); }
+
+  h2 { font: 11px/1 var(--mono); color: var(--mut); letter-spacing: .06em; text-transform: uppercase; margin: 0 0 10px; font-weight: 500; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th { font: 11px var(--mono); color: var(--mut); font-weight: 500; text-align: center; padding: 0 4px 6px; border-bottom: 1px solid var(--line-strong); }
+  td { text-align: center; padding: 7px 4px; border-bottom: 1px solid var(--line); font-family: var(--mono); }
+  th:first-child, td:first-child { text-align: left; font-family: var(--sans); }
+  td:first-child { font-weight: 600; font-size: 13px; }
+  td.g10 { color: var(--ok); font-weight: 700; }
+  td.glow { color: var(--bad); }
+  td.na { color: var(--line-strong); }
+  .fine { font-size: 12px; color: var(--mut); margin: 10px 0 0; }
+  .fine summary { cursor: pointer; width: fit-content; }
+  .fine p { margin: 8px 0 0; max-width: 65ch; }
+
+  .cardbar { display: flex; gap: 6px; }
+  .cardbar input { flex: 1; min-width: 0; }
+  #cards { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; max-height: 42vh; overflow: auto; }
+  #cards button { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left; font: inherit; font-size: 13px; color: var(--fg); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 8px 10px; cursor: pointer; transition: background-color .15s var(--ease); }
+  #cards button:hover { background: var(--sunken); }
+  #cards button[aria-pressed="true"] { background: var(--accent-soft); border-color: color-mix(in oklch, var(--accent) 35%, transparent); }
+  #cards span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #cards small { font: 11.5px var(--mono); color: var(--mut); white-space: nowrap; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+  <div class="brand"><h1>Centering</h1><span>Messwerkstatt für Sammelkarten</span></div>
+  <div class="seg" role="group" aria-label="Kartenseite">
+    <button data-side="front">Vorderseite</button>
+    <button data-side="back">Rückseite</button>
+  </div>
+</header>
+<main id="drop">
+  <section aria-label="Messfläche">
+    <div class="toolbar">
+      <div class="group">
+        <label class="btn primary">Foto laden<input type="file" accept="image/*" id="file" hidden></label>
+        <button class="btn" id="warp" title="Perspektive über die 4 Kartenecken korrigieren">Entzerren</button>
+      </div>
+      <div class="group">
+        <span class="lbl">Messung</span>
+        <div class="seg" role="group" aria-label="Messart">
+          <button data-mode="lines" title="Je 4 Linien über die ganze Karte">Linien</button>
+          <button data-mode="points" title="Je Achse 2 Messstrecken mit 4 Punkten">Punkte</button>
+        </div>
+        <button class="btn ghost" id="reset" title="Linien und Punkte auf Standard setzen">Zurücksetzen</button>
+      </div>
+      <div class="group">
+        <span class="lbl">Lupe</span>
+        <div class="seg" role="group" aria-label="Lupe (Taste L)">
+          <button data-lupe="off">Aus</button>
+          <button data-lupe="corner">Ecke</button>
+          <button data-lupe="cursor">Cursor</button>
+        </div>
+        <input type="range" id="lupeZoom" min="1.5" max="12" step="0.5" value="4" aria-label="Lupen-Zoom">
+        <output class="zoomval" id="lupeZoomOut" for="lupeZoom">4×</output>
+      </div>
+      <div class="group rot">
+        <span class="lbl">Drehung</span>
+        <input type="range" id="angle" min="-5" max="5" step="0.01" value="0" aria-label="Drehung">
+        <button class="btn icon" id="rotL" title="−0,01° (Q)" aria-label="Gegen den Uhrzeigersinn">↺</button>
+        <input type="number" id="angleNum" min="-5" max="5" step="0.01" value="0" aria-label="Drehung in Grad">
+        <button class="btn icon" id="rotR" title="+0,01° (E)" aria-label="Im Uhrzeigersinn">↻</button>
+        <button class="btn ghost" id="rot0">0°</button>
+      </div>
+    </div>
+    <div class="notice" id="warpbar" hidden>
+      <p><strong>Ecken setzen:</strong> die 4 gelben Punkte auf die Kartenecken ziehen, bei runden Ecken auf den Schnittpunkt der Kanten.</p>
+      <select id="fmt" aria-label="Kartenformat">
+        <option value="63x88">63 × 88 mm · Pokémon, One Piece, MTG, Lorcana</option>
+        <option value="59x86">59 × 86 mm · Yu-Gi-Oh!, japanische Kleinformate</option>
+      </select>
+      <button class="btn primary" id="warpApply">Anwenden</button>
+      <button class="btn" id="warpCancel">Abbrechen</button>
+      <button class="btn ghost" id="warpUndo" hidden>Original wiederherstellen</button>
+    </div>
+    <div class="stage" id="stage">
+      <div class="canvas-wrap"><canvas id="cv" tabindex="0" aria-label="Kartenfoto mit Messlinien"></canvas></div>
+      <div class="empty" id="empty" hidden>
+        <strong>Kartenfoto hier ablegen</strong>
+        <label class="btn primary">Foto laden<input type="file" accept="image/*" id="file2" hidden></label>
+        <span>oder aus der Zwischenablage einfügen (⌘/Strg + V)</span>
+      </div>
+    </div>
+    <div class="below">
+      <div class="legend"><span><i></i>Kartenrand</span><span><i class="in"></i>Innenrahmen</span></div>
+      <span id="msg" role="status" aria-live="polite"></span>
+    </div>
+    <details class="help">
+      <summary>Bedienung</summary>
+      <ul>
+        <li>Linien oder Punkte ziehen. Mit <kbd>Alt</kbd> gedrückt bewegen sie sich 10× feiner; ausgewählte mit den Pfeiltasten verschieben (<kbd>Shift</kbd> = grob).</li>
+        <li><b>Punkte:</b> je Achse 2 Messstrecken mit außen, innen, innen, außen. Ergebnis ist der Mittelwert; die Strecken dürfen leicht schräg liegen.</li>
+        <li><b>Drehung:</b> <kbd>Q</kbd> / <kbd>E</kbd> ±0,01°, mit <kbd>Shift</kbd> ±0,1°, mit <kbd>Alt</kbd> ±0,001°.</li>
+        <li><b>Lupe:</b> <kbd>L</kbd> wechselt Aus, Ecke, Cursor. Zoom per Regler oder Mausrad über dem Bild.</li>
+        <li><b>Entzerren:</b> für schräg fotografierte Karten. Das Original bleibt gespeichert.</li>
+        <li>Ein neues Foto auf eine belegte Seite legt automatisch eine neue Karte an.</li>
+      </ul>
+    </details>
+  </section>
+  <aside aria-label="Ergebnis">
+    <div class="readout" id="result"></div>
+    <div>
+      <h2>Bestmögliche Note fürs Centering</h2>
+      <table id="grades"></table>
+      <details class="fine">
+        <summary>Wie gerechnet wird</summary>
+        <p>Gewertet wird die schlechtere Achse. Schwellen: edgegrading.com (PSA ab 2025, BGS, SGC, EDGE), cgccards.com (CGC; Rückseite ab Note 8 nicht veröffentlicht, wie PSA angenommen), taggrading.com (TAG, Rückseite TCG). Bei BGS ist die 10 „Pristine“, Gem Mint ist 9.5.</p>
+        <p>AOG vergibt 0 bis 100 Punkte: je Achse sind 5 % Unterschied frei, jedes weitere Prozent kostet einen Punkt. OC (off-center) ab 50 Punkten oder weniger oder 2/3 zu 1/3. „Gesamt“ gewichtet Vorderseite 100 %, Rückseite 70 %.</p>
+      </details>
+    </div>
+    <div>
+      <h2>Karten</h2>
+      <div class="cardbar">
+        <input type="text" id="name" aria-label="Name der Karte">
+        <button class="btn" id="new" title="Neue Karte">Neu</button>
+        <button class="btn ghost" id="del" title="Karte löschen">Löschen</button>
+      </div>
+      <ul id="cards"></ul>
+    </div>
+  </aside>
+</main>
+</div>
+<script>
+// Max. Abweichung der größeren Seite in % für Note [10, 9, 8, 7]
+const GRADES = {
+  front: { PSA:[55,60,65,70], CGC:[55,60,65,70], BGS:[50,55,60,65], SGC:[55,60,65,70], TAG:[55,60,65,70], EDGE:[55,60,70,75] },
+  back:  { PSA:[75,90,90,90], CGC:[75,90,90,90], BGS:[50,70,80,90], SGC:[55,60,65,70], TAG:[65,75,95,99], EDGE:[70,80,90,90] },
+};
+const LABELS = [10, 9, 8, 7];
+const MAX_ANGLE = 5; // ponytail: fixed scale for the full slider range, so rotating never moves the card under the lines
+const defPts = () => ({
+  lr: [.3, .7].map(y => [.03, .08, .92, .97].map(x => [x, y])),
+  tb: [.3, .7].map(x => [.03, .06, .94, .97].map(y => [x, y])),
+});
+const DEF = () => ({ angle: 0, mode: 'lines', v: [.03, .08, .92, .97], h: [.03, .06, .94, .97], pts: defPts() });
+const newCard = n => ({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: 'Karte ' + n, front: DEF(), back: DEF(), has: { front: false, back: false } });
+
+// Images live in IndexedDB (localStorage's ~5 MB fills after a few photos); card metadata in localStorage.
+const idb = new Promise((res, rej) => {
+  const r = indexedDB.open('tcg-centering', 1);
+  r.onupgradeneeded = () => r.result.createObjectStore('img');
+  r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+});
+const idbDo = async (mode, fn) => {
+  const db = await idb;
+  return new Promise((res, rej) => {
+    const tx = db.transaction('img', mode), req = fn(tx.objectStore('img'));
+    tx.oncomplete = () => res(req.result); tx.onerror = () => rej(tx.error);
+  });
+};
+const imgGet = k => idbDo('readonly', s => s.get(k));
+const imgPut = (k, b) => idbDo('readwrite', s => s.put(b, k));
+const imgDel = k => idbDo('readwrite', s => s.delete(k));
+
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+const angleEl = document.getElementById('angle'), angleNum = document.getElementById('angleNum');
+const msg = document.getElementById('msg'), nameEl = document.getElementById('name'), listEl = document.getElementById('cards');
+
+let DB;
+try { DB = JSON.parse(localStorage.getItem('cc-cards')); } catch {}
+if (!DB?.list?.length) DB = null;
+DB?.list.forEach(c => ['front', 'back'].forEach(s => { c[s].pts ||= defPts(); c[s].mode ||= 'lines'; }));
+
+let side = 'front';
+const imgs = { front: null, back: null };
+const card = () => DB.list.find(c => c.id === DB.cur);
+const st = () => card()[side];
+const save = () => { try { localStorage.setItem('cc-cards', JSON.stringify(DB)); } catch {} renderList(); };
+
+let W = 0, H = 0, dpr = 1, sel = null, drag = null, loupe = null;
+let lupeZ = 4; try { lupeZ = +localStorage.getItem('cc-lupe-z') || 4; } catch {}
+let warpEdit = null; // { img: original, prev: image shown before, corners: [[x,y] ×4] in original image px, TL TR BR BL }
+let lupeMode; try { lupeMode = localStorage.getItem('cc-lupe'); } catch {}
+if (!['off', 'corner', 'cursor'].includes(lupeMode)) lupeMode = 'off';
+
+const blobImg = b => new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = URL.createObjectURL(b); });
+
+async function loadImages() {
+  const id = DB.cur;
+  for (const s of ['front', 'back']) {
+    if (imgs[s]) URL.revokeObjectURL(imgs[s].src);
+    imgs[s] = null;
+    const b = card().has[s] ? await imgGet(id + ':' + s).catch(() => null) : null;
+    if (DB.cur !== id) return; // user switched cards meanwhile
+    imgs[s] = b ? await blobImg(b) : null;
+  }
+}
+
+async function setImage(file) {
+  if (card().has[side]) { // ponytail: never overwrite a stored photo; a new card is one click to delete
+    const c = newCard(DB.list.length + 1);
+    DB.list.unshift(c); DB.cur = c.id; await loadImages();
+  }
+  const src = await blobImg(file);
+  URL.revokeObjectURL(src.src);
+  const k = Math.min(1, 2400 / Math.max(src.width, src.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(src.width * k); c.height = Math.round(src.height * k);
+  c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
+  msg.textContent = '';
+  try { await imgPut(DB.cur + ':' + side, blob); card().has[side] = true; }
+  catch { msg.textContent = 'Bild konnte nicht gespeichert werden – es bleibt nur bis zum Neuladen erhalten.'; }
+  if (imgs[side]) URL.revokeObjectURL(imgs[side].src);
+  imgs[side] = await blobImg(blob);
+  card()[side] = DEF();
+  save(); switchSide(side);
+}
+
+// Bounding box of the image rotated by MAX_ANGLE defines canvas aspect and scale.
+function bbox(img) {
+  const a = MAX_ANGLE * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+  return [img.width * c + img.height * s, img.width * s + img.height * c];
+}
+
+function layout() {
+  const img = imgs[side];
+  const [bw, bh] = img ? bbox(img) : [63, 88];
+  const maxW = cv.parentElement.clientWidth, maxH = Math.max(360, innerHeight - 190);
+  document.getElementById('empty').hidden = !!img;
+  W = maxW; H = W * bh / bw;
+  if (H > maxH) { H = maxH; W = H * bw / bh; }
+  dpr = devicePixelRatio || 1;
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  if (img) st().ar = H / W; // point distances need real proportions, not canvas fractions
+}
+
+function scene(lw) {
+  const img = imgs[side], s = st();
+  ctx.fillStyle = '#1a1714'; ctx.fillRect(0, 0, W, H);
+  if (img) {
+    const k = W / bbox(img)[0];
+    ctx.save();
+    ctx.translate(W / 2, H / 2); ctx.rotate((warpEdit ? 0 : s.angle) * Math.PI / 180);
+    ctx.drawImage(img, -img.width * k / 2, -img.height * k / 2, img.width * k, img.height * k);
+    ctx.restore();
+  } else return; // empty state is an HTML overlay; no lines without a photo
+  const line = (axis, i, f) => {
+    const isSel = sel && sel.axis === axis && sel.i === i, outer = i === 0 || i === 3;
+    ctx.strokeStyle = outer ? '#3fd0e8' : '#f06bb0';
+    ctx.lineWidth = lw * (isSel ? 2.5 : 1.25);
+    ctx.setLineDash(outer ? [] : [6 * lw, 4 * lw]); // solid vs dashed, so it doesn't rely on color alone
+    ctx.beginPath();
+    if (axis === 'v') { ctx.moveTo(f * W, 0); ctx.lineTo(f * W, H); }
+    else { ctx.moveTo(0, f * H); ctx.lineTo(W, f * H); }
+    ctx.stroke();
+  };
+  if (warpEdit) drawCorners(lw);
+  else if (s.mode === 'points') {
+    ctx.setLineDash([]);
+    for (const k of ['lr', 'tb']) s.pts[k].forEach((row, j) => {
+      const P = row.map(([x, y]) => [x * W, y * H]);
+      ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(...P[0]); ctx.lineTo(...P[3]); ctx.stroke();
+      P.forEach(([px, py], i) => {
+        const isSel = sel && sel.k === k && sel.j === j && sel.i === i;
+        ctx.strokeStyle = isSel ? '#fff' : (i === 0 || i === 3) ? '#3fd0e8' : '#f06bb0';
+        ctx.lineWidth = lw * (isSel ? 2 : 1.5);
+        ctx.beginPath(); ctx.arc(px, py, 6 * lw, 0, Math.PI * 2); ctx.stroke();
+        ctx.lineWidth = lw; // crosshair marks the exact spot, visible under the loupe
+        ctx.beginPath(); ctx.moveTo(px - 10 * lw, py); ctx.lineTo(px + 10 * lw, py); ctx.moveTo(px, py - 10 * lw); ctx.lineTo(px, py + 10 * lw); ctx.stroke();
+      });
+    });
+  } else {
+    s.v.forEach((f, i) => line('v', i, f));
+    s.h.forEach((f, i) => line('h', i, f));
+  }
+  ctx.setLineDash([]);
+}
+
+const toCanvas = ([x, y]) => { const img = imgs[side], k = W / bbox(img)[0]; return [W / 2 + (x - img.width / 2) * k, H / 2 + (y - img.height / 2) * k]; };
+function drawCorners(lw) {
+  const P = warpEdit.corners.map(toCanvas);
+  ctx.setLineDash([]); ctx.strokeStyle = '#facc15'; ctx.lineWidth = lw;
+  ctx.beginPath(); P.forEach((p, i) => i ? ctx.lineTo(...p) : ctx.moveTo(...p)); ctx.closePath(); ctx.stroke();
+  P.forEach(([px, py], i) => {
+    ctx.strokeStyle = sel?.c === i ? '#fff' : '#facc15'; ctx.lineWidth = lw * (sel?.c === i ? 2 : 1.5);
+    ctx.beginPath(); ctx.arc(px, py, 7 * lw, 0, Math.PI * 2); ctx.stroke();
+    ctx.lineWidth = lw;
+    ctx.beginPath(); ctx.moveTo(px - 12 * lw, py); ctx.lineTo(px + 12 * lw, py); ctx.moveTo(px, py - 12 * lw); ctx.lineTo(px, py + 12 * lw); ctx.stroke();
+  });
+}
+
+function draw() {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  scene(1);
+  if (!loupe || !imgs[side]) return;
+  // Magnifier: re-render the scene zoomed around the focus point (uses full image resolution).
+  // free lens sits on the cursor; line-drag lens sits in a corner so it doesn't hide the line
+  const R = loupe.free ? Math.min(130, W / 3) : Math.min(90, W / 4), Z = lupeZ;
+  const cx = loupe.free ? loupe.x : loupe.x < W / 2 ? W - R - 8 : R + 8, cy = loupe.free ? loupe.y : R + 8;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.clip();
+  ctx.setTransform(dpr * Z, 0, 0, dpr * Z, dpr * (cx - loupe.x * Z), dpr * (cy - loupe.y * Z));
+  scene(1 / Z);
+  ctx.restore();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
+}
+
+function hit(x, y, tol) {
+  let best = null, d = tol;
+  if (warpEdit) {
+    warpEdit.corners.forEach((p, i) => { const [cx, cy] = toCanvas(p), dd = Math.hypot(cx - x, cy - y); if (dd < d) { d = dd; best = { c: i }; } });
+    return best;
+  }
+  if (st().mode === 'points') {
+    for (const k of ['lr', 'tb']) st().pts[k].forEach((row, j) => row.forEach(([fx, fy], i) => {
+      const dd = Math.hypot(fx * W - x, fy * H - y); if (dd < d) { d = dd; best = { k, j, i }; }
+    }));
+    return best;
+  }
+  st().v.forEach((f, i) => { const dd = Math.abs(f * W - x); if (dd < d) { d = dd; best = { axis: 'v', i }; } });
+  st().h.forEach((f, i) => { const dd = Math.abs(f * H - y); if (dd < d) { d = dd; best = { axis: 'h', i }; } });
+  return best;
+}
+
+const pos = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+const clamp = v => Math.min(1, Math.max(0, v));
+const focusOf = (s, x, y) => s.c !== undefined ? (p => ({ x: p[0], y: p[1] }))(toCanvas(warpEdit.corners[s.c])) : s.k ? { x: st().pts[s.k][s.j][s.i][0] * W, y: st().pts[s.k][s.j][s.i][1] * H } : s.axis === 'v' ? { x: st().v[s.i] * W, y } : { x, y: st().h[s.i] * H };
+
+cv.addEventListener('pointerdown', e => {
+  const [x, y] = pos(e);
+  sel = hit(x, y, e.pointerType === 'touch' ? 24 : 10);
+  if (sel) { drag = { x, y }; cv.setPointerCapture(e.pointerId); loupe = focusOf(sel, x, y); }
+  draw();
+});
+cv.addEventListener('pointermove', e => {
+  const [x, y] = pos(e);
+  if (!drag) {
+    if (lupeMode !== 'off') { loupe = { x, y, free: lupeMode === 'cursor' }; cv.style.cursor = lupeMode === 'cursor' ? 'none' : 'crosshair'; draw(); return; }
+    const h = hit(x, y, 10); cv.style.cursor = h ? (h.axis === 'v' ? 'col-resize' : 'row-resize') : 'default'; return;
+  }
+  const fine = e.altKey ? 0.1 : 1, s = st();
+  if (sel.c !== undefined) { const k = W / bbox(imgs[side])[0], p = warpEdit.corners[sel.c]; p[0] += (x - drag.x) * fine / k; p[1] += (y - drag.y) * fine / k; }
+  else if (sel.k) { const p = s.pts[sel.k][sel.j][sel.i]; p[0] = clamp(p[0] + (x - drag.x) * fine / W); p[1] = clamp(p[1] + (y - drag.y) * fine / H); }
+  else if (sel.axis === 'v') s.v[sel.i] = clamp(s.v[sel.i] + (x - drag.x) * fine / W);
+  else s.h[sel.i] = clamp(s.h[sel.i] + (y - drag.y) * fine / H);
+  drag = { x, y }; loupe = focusOf(sel, x, y);
+  draw(); update();
+});
+const endDrag = () => { if (!drag) return; drag = null; loupe = lupeMode === 'corner' ? { ...loupe, free: false } : null; save(); draw(); };
+cv.addEventListener('pointerup', endDrag);
+cv.addEventListener('pointercancel', endDrag);
+cv.addEventListener('pointerleave', () => { if (lupeMode === 'cursor' && !drag) { loupe = null; draw(); } }); // corner lens keeps its last spot
+cv.addEventListener('wheel', e => {
+  if (lupeMode === 'off') return;
+  e.preventDefault();
+  setZoom(lupeZ * (e.deltaY < 0 ? 1.15 : 1 / 1.15));
+  const [x, y] = pos(e); loupe = { x, y, free: lupeMode === 'cursor' }; draw();
+}, { passive: false });
+
+cv.addEventListener('keydown', e => {
+  if (!sel) return;
+  const step = e.shiftKey ? 2 : 0.25, s = st();
+  const d = { ArrowLeft: -step, ArrowRight: step, ArrowUp: -step, ArrowDown: step }[e.key];
+  if (d === undefined) return;
+  if (sel.c !== undefined) {
+    e.preventDefault();
+    const k = W / bbox(imgs[side])[0], p = warpEdit.corners[sel.c];
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') p[0] += d / k; else p[1] += d / k;
+    loupe = focusOf(sel); draw(); return;
+  }
+  if (sel.k) {
+    e.preventDefault();
+    const p = s.pts[sel.k][sel.j][sel.i], horiz = e.key === 'ArrowLeft' || e.key === 'ArrowRight';
+    if (horiz) p[0] = clamp(p[0] + d / W); else p[1] = clamp(p[1] + d / H);
+    loupe = focusOf(sel); save(); draw(); update(); return;
+  }
+  if ((sel.axis === 'v') !== (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return;
+  e.preventDefault();
+  if (sel.axis === 'v') s.v[sel.i] = clamp(s.v[sel.i] + d / W);
+  else s.h[sel.i] = clamp(s.h[sel.i] + d / H);
+  loupe = sel.axis === 'v' ? { x: s.v[sel.i] * W, y: H / 2 } : { x: W / 2, y: s.h[sel.i] * H };
+  save(); draw(); update();
+});
+cv.addEventListener('keyup', () => { if (loupe && !drag && lupeMode === 'off') { loupe = null; draw(); } });
+
+// Ratio of the two borders along one axis; lines are sorted so outer/inner can't be swapped by dragging.
+function ratio(arr) {
+  const [a, b, c, d] = [...arr].sort((x, y) => x - y);
+  const A = b - a, B = d - c;
+  if (A + B <= 0) return [50, 50];
+  const p = A / (A + B) * 100;
+  return [p, 100 - p];
+}
+// Point mode: project the 4 points onto their own segment, so a slightly tilted segment (or card) cancels out.
+function segRatio(row, ar) {
+  const P = row.map(([x, y]) => [x, y * ar]);
+  const ux = P[3][0] - P[0][0], uy = P[3][1] - P[0][1], L = Math.hypot(ux, uy) || 1;
+  return ratio(P.map(([x, y]) => ((x - P[0][0]) * ux + (y - P[0][1]) * uy) / L));
+}
+function measure(s) {
+  if (s.mode === 'points') {
+    const ar = s.ar || 1.4, avg = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    const parts = { lr: s.pts.lr.map(r => segRatio(r, ar)), tb: s.pts.tb.map(r => segRatio(r, ar)) };
+    const lr = avg(...parts.lr), tb = avg(...parts.tb);
+    return { lr, tb, parts, worst: Math.max(...lr, ...tb) };
+  }
+  const lr = ratio(s.v), tb = ratio(s.h);
+  return { lr, tb, worst: Math.max(...lr, ...tb) };
+}
+// AOG: 100 points; per axis 5 percentage points of L-R difference are free, each further one costs 1 point.
+function aogPts(m) {
+  const ded = r => Math.max(0, Math.abs(r[0] - r[1]) - 5);
+  const p = Math.round(100 - ded(m.lr) - ded(m.tb));
+  return m.worst >= 200 / 3 ? Math.min(p, 50) : p; // ponytail: >= 2/3 : 1/3 is OC regardless of points, so clamp into OC
+}
+function grade(worst, thresholds) {
+  const w = Math.round(worst * 10) / 10;
+  const i = thresholds.findIndex(t => w <= t);
+  return i < 0 ? null : LABELS[i];
+}
+const fmt = ([a, b]) => a.toFixed(1) + ' / ' + b.toFixed(1);
+const fmtW = w => w.toFixed(1) + '/' + (100 - w).toFixed(1);
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function update() {
+  const m = measure(st()), c = card();
+  const has = c.has[side];
+  document.getElementById('result').innerHTML = `
+    <div class="meta"><b>${esc(c.name)}</b><span>${side === 'front' ? 'Vorderseite' : 'Rückseite'}</span></div>
+    <div class="figure">${has ? m.worst.toFixed(1) + '<small> / ' + (100 - m.worst).toFixed(1) + '</small>' : '<small>kein Foto</small>'}</div>
+    <div class="axis"><span>Links / Rechts</span><span>${has ? fmt(m.lr) : '–'}</span></div>
+    <div class="axis"><span>Oben / Unten</span><span>${has ? fmt(m.tb) : '–'}</span></div>
+    ${m.parts && has ? `<div class="parts">L/R oben ${fmt(m.parts.lr[0])} · unten ${fmt(m.parts.lr[1])}<br>O/U links ${fmt(m.parts.tb[0])} · rechts ${fmt(m.parts.tb[1])}</div>` : ''}`;
+  const ms = { front: c.has.front && measure(c.front), back: c.has.back && measure(c.back) };
+  const cell = g => g === undefined ? '<td class="na">–</td>' : g == null ? '<td class="glow">&lt;7</td>' : `<td class="${g === 10 ? 'g10' : ''}">${g}</td>`;
+  let html = '<tr><th>Grader</th><th>Vorne</th><th>Hinten</th><th>Gesamt</th></tr>';
+  for (const co of Object.keys(GRADES.front)) {
+    const f = ms.front ? grade(ms.front.worst, GRADES.front[co]) : undefined;
+    const b = ms.back ? grade(ms.back.worst, GRADES.back[co]) : undefined;
+    const tot = f !== undefined && b !== undefined ? (f == null || b == null ? null : Math.min(f, b)) : undefined;
+    html += `<tr><td>${co}</td>${cell(f)}${cell(b)}${cell(tot)}</tr>`;
+  }
+  const af = ms.front ? aogPts(ms.front) : undefined, ab = ms.back ? aogPts(ms.back) : undefined;
+  const at = af !== undefined && ab !== undefined ? Math.round((af * 1.8 + ab * 1.26) / 3.06) : undefined;
+  const ac = v => v === undefined ? '<td class="na">–</td>' : v <= 50 ? '<td class="glow">OC</td>' : `<td class="${v >= 95 ? 'g10' : ''}">${v} P</td>`;
+  html += `<tr><td>AOG</td>${ac(af)}${ac(ab)}${ac(at)}</tr>`;
+  document.getElementById('grades').innerHTML = html;
+}
+
+function renderList() {
+  listEl.innerHTML = DB.list.map(c => {
+    const sum = [c.has.front && 'V ' + fmtW(measure(c.front).worst), c.has.back && 'H ' + fmtW(measure(c.back).worst)].filter(Boolean).join(' · ');
+    return `<li><button data-id="${c.id}" aria-pressed="${c.id === DB.cur}"><span>${esc(c.name)}</span><small>${sum || 'leer'}</small></button></li>`;
+  }).join('');
+}
+
+function switchSide(s) {
+  endWarp();
+  side = s; sel = null;
+  document.querySelectorAll('[data-side]').forEach(b => b.setAttribute('aria-pressed', b.dataset.side === s));
+  syncAngle(); syncMode(); layout(); draw(); update();
+}
+
+async function selectCard(id) {
+  endWarp();
+  DB.cur = id; sel = null; nameEl.value = card().name; save();
+  await loadImages();
+  switchSide(side);
+}
+
+function setAngle(a) {
+  st().angle = Math.round(Math.min(MAX_ANGLE, Math.max(-MAX_ANGLE, a)) * 1000) / 1000;
+  syncAngle(); draw(); save();
+}
+function syncAngle() { angleEl.value = st().angle; angleNum.value = st().angle; }
+const rotStep = e => e.altKey ? 0.001 : e.shiftKey ? 0.1 : 0.01;
+
+document.querySelectorAll('[data-side]').forEach(b => b.onclick = () => switchSide(b.dataset.side));
+document.getElementById('file2').onchange = document.getElementById('file').onchange = e => { const f = e.target.files[0]; if (f) setImage(f); e.target.value = ''; };
+document.getElementById('reset').onclick = () => { card()[side] = { ...DEF(), angle: st().angle, mode: st().mode, ar: st().ar }; sel = null; save(); draw(); update(); };
+const syncMode = () => document.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === st().mode));
+document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { if (warpEdit) return; st().mode = b.dataset.mode; sel = null; syncMode(); save(); draw(); update(); });
+angleEl.oninput = () => setAngle(+angleEl.value);
+angleNum.onchange = () => setAngle(+angleNum.value || 0);
+document.getElementById('rotL').onclick = e => setAngle(st().angle - rotStep(e));
+document.getElementById('rotR').onclick = e => setAngle(st().angle + rotStep(e));
+document.getElementById('rot0').onclick = () => setAngle(0);
+
+const zoomEl = document.getElementById('lupeZoom'), zoomOut = document.getElementById('lupeZoomOut');
+function setZoom(z) {
+  lupeZ = Math.round(Math.min(12, Math.max(1.5, z)) * 10) / 10;
+  zoomEl.value = lupeZ; zoomOut.textContent = lupeZ.toFixed(1).replace('.0', '').replace('.', ',') + '×';
+  try { localStorage.setItem('cc-lupe-z', lupeZ); } catch {}
+  draw();
+}
+zoomEl.oninput = () => setZoom(+zoomEl.value);
+document.querySelectorAll('[data-lupe]').forEach(b => b.onclick = () => { lupeMode = b.dataset.lupe; applyLupe(); });
+function applyLupe() {
+  document.querySelectorAll('[data-lupe]').forEach(b => b.setAttribute('aria-pressed', b.dataset.lupe === lupeMode));
+  try { localStorage.setItem('cc-lupe', lupeMode); } catch {}
+  loupe = lupeMode === 'off' ? null : { x: loupe?.x ?? W / 2, y: loupe?.y ?? H / 2, free: lupeMode === 'cursor' };
+  cv.style.cursor = 'default'; draw();
+}
+const toggleLupe = () => { lupeMode = { off: 'corner', corner: 'cursor', cursor: 'off' }[lupeMode]; applyLupe(); };
+document.addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.target.tagName === 'INPUT') return;
+  const k = e.code; // physical key, so Shift/Alt don't change it
+  if (k === 'KeyL') toggleLupe();
+  else if (k === 'KeyQ') setAngle(st().angle - rotStep(e));
+  else if (k === 'KeyE') setAngle(st().angle + rotStep(e));
+});
+
+nameEl.oninput = () => { card().name = nameEl.value || 'Unbenannt'; save(); update(); };
+listEl.onclick = e => { const b = e.target.closest('[data-id]'); if (b) selectCard(b.dataset.id); };
+document.getElementById('new').onclick = () => { const c = newCard(DB.list.length + 1); DB.list.unshift(c); selectCard(c.id); };
+document.getElementById('del').onclick = async () => {
+  const c = card();
+  if (!confirm(`„${c.name}“ mit beiden Bildern löschen?`)) return;
+  await Promise.all(['front', 'back'].flatMap(s => [c.id + ':' + s, c.id + ':' + s + ':orig']).map(k => imgDel(k).catch(() => {})));
+  DB.list = DB.list.filter(x => x !== c);
+  if (!DB.list.length) DB.list.push(newCard(1));
+  selectCard(DB.list[0].id);
+};
+
+// ---- Perspective correction --------------------------------------------------
+// Homography H with H·src[i] ∝ dst[i] (8 unknowns, h33 = 1), solved by Gauss-Jordan.
+function homography(src, dst) {
+  const A = [], b = [];
+  for (let i = 0; i < 4; i++) {
+    const [x, y] = src[i], [u, v] = dst[i];
+    A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
+    A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
+  }
+  for (let c = 0; c < 8; c++) {
+    let p = c;
+    for (let r = c + 1; r < 8; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+    [A[c], A[p]] = [A[p], A[c]]; [b[c], b[p]] = [b[p], b[c]];
+    for (let r = 0; r < 8; r++) {
+      if (r === c) continue;
+      const f = A[r][c] / A[c][c];
+      for (let k = c; k < 8; k++) A[r][k] -= f * A[c][k];
+      b[r] -= f * b[c];
+    }
+  }
+  return [...b.map((v, i) => v / A[i][i]), 1];
+}
+const applyH = (h, x, y) => { const w = h[6] * x + h[7] * y + 1; return [(h[0] * x + h[1] * y + h[2]) / w, (h[3] * x + h[4] * y + h[5]) / w]; };
+
+// Warp the quad `corners` (TL TR BR BL) of img into an upright card of aspect `ratio` (w/h), with a 4 % margin
+// around it so the outer card edge stays visible for measuring. Bilinear sampling from the original pixels.
+function warp(img, corners, ratio) {
+  const d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  const h = Math.min(2200, Math.max(d(corners[0], corners[3]), d(corners[1], corners[2]))), w = h * ratio;
+  const m = Math.round(w * 0.04), OW = Math.round(w) + 2 * m, OH = Math.round(h) + 2 * m;
+  const Hm = homography([[m, m], [m + w, m], [m + w, m + h], [m, m + h]], corners); // output px -> source px
+  const sc = document.createElement('canvas'); sc.width = img.width; sc.height = img.height;
+  const sx = sc.getContext('2d'); sx.drawImage(img, 0, 0);
+  const S = sx.getImageData(0, 0, img.width, img.height).data, SW = img.width, SH = img.height;
+  const out = document.createElement('canvas'); out.width = OW; out.height = OH;
+  const ox = out.getContext('2d'), O = ox.createImageData(OW, OH), D = O.data;
+  for (let y = 0; y < OH; y++) for (let x = 0; x < OW; x++) {
+    const [u, v] = applyH(Hm, x + 0.5, y + 0.5), fx = u - 0.5, fy = v - 0.5;
+    const x0 = Math.floor(fx), y0 = Math.floor(fy), o = (y * OW + x) * 4;
+    if (x0 < 0 || y0 < 0 || x0 >= SW - 1 || y0 >= SH - 1) { D[o + 3] = 255; continue; } // outside photo: black
+    const ax = fx - x0, ay = fy - y0, i00 = (y0 * SW + x0) * 4, i10 = i00 + 4, i01 = i00 + SW * 4, i11 = i01 + 4;
+    for (let c = 0; c < 3; c++)
+      D[o + c] = (S[i00 + c] * (1 - ax) + S[i10 + c] * ax) * (1 - ay) + (S[i01 + c] * (1 - ax) + S[i11 + c] * ax) * ay;
+    D[o + 3] = 255;
+  }
+  ox.putImageData(O, 0, 0);
+  return { canvas: out, m, w, h };
+}
+
+const warpBar = document.getElementById('warpbar'), fmtEl = document.getElementById('fmt'), undoBtn = document.getElementById('warpUndo');
+const imgKey = () => DB.cur + ':' + side;
+
+function endWarp() {
+  if (!warpEdit) return;
+  if (warpEdit.img !== warpEdit.prev) URL.revokeObjectURL(warpEdit.img.src);
+  imgs[side] = warpEdit.prev; warpEdit = null; sel = null; warpBar.hidden = true;
+}
+
+async function startWarp() {
+  const s = st(), prev = imgs[side];
+  if (!prev || warpEdit) return;
+  let img = prev;
+  if (s.warp) { const b = await imgGet(imgKey() + ':orig').catch(() => null); if (b) img = await blobImg(b); }
+  sel = null; imgs[side] = img; layout();
+  const k = W / bbox(img)[0], toImg = (fx, fy) => [(fx * W - W / 2) / k + img.width / 2, (fy * H - H / 2) / k + img.height / 2];
+  const corners = s.warp && img !== prev ? s.warp.corners.map(p => [...p])
+    : [[s.v[0], s.h[0]], [s.v[3], s.h[0]], [s.v[3], s.h[3]], [s.v[0], s.h[3]]].map(([x, y]) => toImg(x, y)); // start from the outer lines
+  warpEdit = { img, prev, corners };
+  if (s.warp) fmtEl.value = s.warp.fmt;
+  undoBtn.hidden = !s.warp; warpBar.hidden = false;
+  draw();
+}
+
+// Put lines and points onto the known card rectangle of a freshly warped image.
+function fitToCard({ m, w, h }) {
+  const s = st(), fx = x => toCanvas([x, 0])[0] / W, fy = y => toCanvas([0, y])[1] / H;
+  const xs = [m, m + w * .05, m + w * .95, m + w].map(fx), ys = [m, m + h * .04, m + h * .96, m + h].map(fy);
+  s.v = xs; s.h = ys;
+  s.pts = { lr: [.3, .7].map(t => xs.map(x => [x, fy(m + h * t)])), tb: [.3, .7].map(t => ys.map(y => [fx(m + w * t), y])) };
+}
+
+async function applyWarp() {
+  const { img, prev, corners } = warpEdit, s = st(), key = imgKey(), fmt = fmtEl.value;
+  const [a, b] = fmt.split('x').map(Number);
+  msg.textContent = 'Entzerre …';
+  await new Promise(r => setTimeout(r, 30)); // let the message paint before the blocking loop
+  const res = warp(img, corners, a / b);
+  const blob = await new Promise(r => res.canvas.toBlob(r, 'image/jpeg', 0.92));
+  msg.textContent = '';
+  try {
+    if (!s.warp) { const orig = await imgGet(key); if (orig) await imgPut(key + ':orig', orig); } // keep the untouched photo once
+    await imgPut(key, blob);
+  } catch { msg.textContent = 'Entzerrtes Bild konnte nicht gespeichert werden.'; }
+  URL.revokeObjectURL(prev.src); if (img !== prev) URL.revokeObjectURL(img.src);
+  warpEdit = null; warpBar.hidden = true;
+  imgs[side] = await blobImg(blob);
+  card()[side] = { ...DEF(), mode: s.mode, warp: { corners, fmt } };
+  switchSide(side); fitToCard(res); save(); draw(); update();
+}
+
+async function undoWarp() {
+  const key = imgKey(), orig = await imgGet(key + ':orig').catch(() => null);
+  if (!orig || !confirm('Entzerrung verwerfen und Originalfoto wiederherstellen?')) return;
+  await imgPut(key, orig); await imgDel(key + ':orig');
+  const shown = warpEdit.prev; endWarp(); URL.revokeObjectURL(shown.src);
+  imgs[side] = await blobImg(orig);
+  card()[side] = { ...DEF(), mode: st().mode };
+  save(); switchSide(side);
+}
+
+document.getElementById('warp').onclick = startWarp;
+document.getElementById('warpApply').onclick = applyWarp;
+document.getElementById('warpCancel').onclick = () => { endWarp(); layout(); draw(); };
+undoBtn.onclick = undoWarp;
+
+document.addEventListener('paste', e => {
+  const item = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith('image/'));
+  if (item) { e.preventDefault(); setImage(item.getAsFile()); }
+});
+const dropEl = document.getElementById('drop');
+const stageEl = document.getElementById('stage');
+dropEl.addEventListener('dragover', e => { e.preventDefault(); stageEl.classList.add('dragover'); });
+dropEl.addEventListener('dragleave', e => { if (!dropEl.contains(e.relatedTarget)) stageEl.classList.remove('dragover'); });
+dropEl.addEventListener('drop', e => {
+  e.preventDefault(); stageEl.classList.remove('dragover');
+  const f = [...e.dataTransfer.files].find(f => f.type.startsWith('image/'));
+  if (f) setImage(f);
+});
+addEventListener('resize', () => { layout(); draw(); });
+
+// Self-check of the math (logs to console only if it fails).
+console.assert(Math.abs(ratio([0, 3, 10, 12])[0] - 60) < 1e-9, 'ratio 3mm/2mm should be 60/40');
+console.assert(aogPts({ lr: [53.4, 46.6], tb: [55.9, 44.1], worst: 55.9 }) === 91, 'AOG example cert 0000061248 front = 91');
+console.assert(Math.abs(segRatio([[0, 0], [3, 0.3], [10, 1], [12, 1.2]], 1)[0] - 60) < 1e-9, 'tilted segment keeps 60/40');
+{ const q = [[10, 20], [110, 5], [130, 160], [0, 140]], hh = homography([[0, 0], [1, 0], [1, 1], [0, 1]], q), r = applyH(hh, 1, 1);
+  console.assert(Math.abs(r[0] - 130) < 1e-6 && Math.abs(r[1] - 160) < 1e-6, 'homography maps corners'); }
+console.assert(grade(60, GRADES.front.PSA) === 9 && grade(55, GRADES.front.PSA) === 10 && grade(71, GRADES.front.PSA) === null, 'grade thresholds');
+
+(async () => {
+  if (!DB) {
+    // Migrate the single-card format of the first prototype (cc-state + cc-img-* data URLs).
+    const c = newCard(1);
+    DB = { cur: c.id, list: [c] };
+    try {
+      const old = JSON.parse(localStorage.getItem('cc-state'));
+      if (old) { c.front = old.front || c.front; c.back = old.back || c.back; }
+      for (const s of ['front', 'back']) {
+        const url = localStorage.getItem('cc-img-' + s);
+        if (url) { await imgPut(c.id + ':' + s, await (await fetch(url)).blob()); c.has[s] = true; }
+      }
+      ['cc-state', 'cc-img-front', 'cc-img-back'].forEach(k => localStorage.removeItem(k));
+    } catch {}
+  }
+  await selectCard(DB.cur && DB.list.some(c => c.id === DB.cur) ? DB.cur : DB.list[0].id);
+  setZoom(lupeZ); applyLupe();
+})();
+</script>
+</body>
+</html>
