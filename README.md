@@ -7,6 +7,7 @@ Measure the centering of trading cards (Pokémon, One Piece, MTG, Lorcana, Yu-Gi
 ## Features
 
 - Load a photo via file picker, drag & drop or clipboard paste.
+- Take a photo in the browser with a card frame overlay; the shot is cropped around the frame.
 - Measure with lines, or with two 4-point segments per axis (averaged, tolerant to slight tilt).
 - Fine rotation down to 0.001°.
 - Perspective correction from the four card corners (63 × 88 mm or 59 × 86 mm); the original photo is kept.

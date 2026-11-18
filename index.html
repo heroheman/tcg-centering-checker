@@ -172,6 +172,27 @@
   #cards span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #cards small { font: 11.5px var(--mono); color: var(--mut); white-space: nowrap; }
 
+  /* Camera viewfinder */
+  dialog#cam { padding: 0; border: 0; margin: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; background: #0d0b0a; color: oklch(0.95 0.01 75); overflow: hidden; }
+  dialog#cam::backdrop { background: #0d0b0a; }
+  #camVideo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .cam-frame {
+    position: absolute; left: 50%; top: 47%; translate: -50% -50%;
+    aspect-ratio: 63 / 88; height: min(70dvh, calc((100vw - 56px) * 88 / 63));
+    border-radius: 4.5% / 3.2%; outline: 1px solid oklch(1 0 0 / .45);
+    box-shadow: 0 0 0 100vmax oklch(0.1 0.01 60 / .55); /* dims everything outside the frame */
+  }
+  .cam-frame i { position: absolute; width: 26px; height: 26px; border: 3px solid var(--accent); }
+  .cam-frame i:nth-child(1) { top: -3px; left: -3px; border-right: 0; border-bottom: 0; border-top-left-radius: 8px; }
+  .cam-frame i:nth-child(2) { top: -3px; right: -3px; border-left: 0; border-bottom: 0; border-top-right-radius: 8px; }
+  .cam-frame i:nth-child(3) { bottom: -3px; right: -3px; border-left: 0; border-top: 0; border-bottom-right-radius: 8px; }
+  .cam-frame i:nth-child(4) { bottom: -3px; left: -3px; border-right: 0; border-top: 0; border-bottom-left-radius: 8px; }
+  .cam-hint { position: absolute; top: max(14px, env(safe-area-inset-top)); left: 16px; right: 16px; margin: 0; text-align: center; font-size: 13px; text-shadow: 0 1px 3px #000; }
+  .cam-bar { position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 16px 20px max(20px, env(safe-area-inset-bottom)); }
+  .cam-cancel { justify-self: start; background: oklch(0.2 0.01 60 / .7); color: inherit; border-color: oklch(1 0 0 / .25); }
+  .shutter { width: 70px; height: 70px; border-radius: 50%; border: 4px solid oklch(0.97 0.005 75); background: oklch(0.97 0.005 75); box-shadow: inset 0 0 0 4px #0d0b0a; cursor: pointer; transition: transform .12s var(--ease); }
+  .shutter:active { transform: scale(.94); }
+
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -189,6 +210,8 @@
     <div class="toolbar">
       <div class="group">
         <label class="btn primary">Load photo<input type="file" accept="image/*" id="file" hidden></label>
+        <button class="btn" data-cam title="Take a photo with a card frame overlay">Camera</button>
+        <input type="file" accept="image/*" capture="environment" id="file3" hidden>
         <button class="btn" id="warp" title="Correct perspective from the 4 card corners">Straighten</button>
       </div>
       <div class="group">
@@ -232,7 +255,7 @@
       <div class="canvas-wrap"><canvas id="cv" tabindex="0" aria-label="Card photo with measuring lines"></canvas></div>
       <div class="empty" id="empty" hidden>
         <strong>Drop a card photo here</strong>
-        <label class="btn primary">Load photo<input type="file" accept="image/*" id="file2" hidden></label>
+        <div class="group"><label class="btn primary">Load photo<input type="file" accept="image/*" id="file2" hidden></label><button class="btn" data-cam>Take photo</button></div>
         <span>or paste from the clipboard (⌘/Ctrl + V)</span>
       </div>
     </div>
@@ -248,7 +271,8 @@
         <li><b>Rotate:</b> <kbd>Q</kbd> / <kbd>E</kbd> ±0.01°, with <kbd>Shift</kbd> ±0.1°, with <kbd>Alt</kbd> ±0.001°.</li>
         <li><b>Loupe:</b> <kbd>L</kbd> cycles off, corner, cursor. Zoom with the slider or the mouse wheel over the image.</li>
         <li><b>Straighten:</b> for cards photographed at an angle. The original is kept.</li>
-        <li>A new photo on a side that already has one creates a new card.</li>
+        <li><b>Camera:</b> fit the card inside the frame; the photo is cropped around it and the lines start on the frame.</li>
+      <li>A new photo on a side that already has one creates a new card.</li>
       </ul>
     </details>
   </section>
@@ -274,6 +298,16 @@
     </div>
   </aside>
 </main>
+<dialog id="cam" aria-label="Camera">
+  <video id="camVideo" playsinline muted autoplay></video>
+  <div class="cam-frame" id="camFrame"><i></i><i></i><i></i><i></i></div>
+  <p class="cam-hint">Place the card inside the frame, as large as possible, with the phone held parallel to it.</p>
+  <div class="cam-bar">
+    <button class="btn cam-cancel" id="camCancel">Cancel</button>
+    <button class="shutter" id="camShot" aria-label="Take photo" autofocus></button>
+    <span></span>
+  </div>
+</dialog>
 </div>
 <script>
 // Max. share of the larger side in % for grade [10, 9, 8, 7]
@@ -626,7 +660,7 @@ function syncAngle() { angleEl.value = st().angle; angleNum.value = st().angle; 
 const rotStep = e => e.altKey ? 0.001 : e.shiftKey ? 0.1 : 0.01;
 
 document.querySelectorAll('[data-side]').forEach(b => b.onclick = () => switchSide(b.dataset.side));
-document.getElementById('file2').onchange = document.getElementById('file').onchange = e => { const f = e.target.files[0]; if (f) setImage(f); e.target.value = ''; };
+document.getElementById('file3').onchange = document.getElementById('file2').onchange = document.getElementById('file').onchange = e => { const f = e.target.files[0]; if (f) setImage(f); e.target.value = ''; };
 document.getElementById('reset').onclick = () => { card()[side] = { ...DEF(), angle: st().angle, mode: st().mode, ar: st().ar }; sel = null; save(); draw(); update(); };
 const syncMode = () => document.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === st().mode));
 document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { if (warpEdit) return; st().mode = b.dataset.mode; sel = null; syncMode(); save(); draw(); update(); });
@@ -746,11 +780,11 @@ async function startWarp() {
 }
 
 // Put lines and points onto the known card rectangle of a freshly warped image.
-function fitToCard({ m, w, h }) {
+function fitToCard({ x: X, y: Y, w, h }) {
   const s = st(), fx = x => toCanvas([x, 0])[0] / W, fy = y => toCanvas([0, y])[1] / H;
-  const xs = [m, m + w * .05, m + w * .95, m + w].map(fx), ys = [m, m + h * .04, m + h * .96, m + h].map(fy);
+  const xs = [X, X + w * .05, X + w * .95, X + w].map(fx), ys = [Y, Y + h * .04, Y + h * .96, Y + h].map(fy);
   s.v = xs; s.h = ys;
-  s.pts = { lr: [.3, .7].map(t => xs.map(x => [x, fy(m + h * t)])), tb: [.3, .7].map(t => ys.map(y => [fx(m + w * t), y])) };
+  s.pts = { lr: [.3, .7].map(t => xs.map(x => [x, fy(Y + h * t)])), tb: [.3, .7].map(t => ys.map(y => [fx(X + w * t), y])) };
 }
 
 async function applyWarp() {
@@ -769,7 +803,7 @@ async function applyWarp() {
   warpEdit = null; warpBar.hidden = true;
   imgs[side] = await blobImg(blob);
   card()[side] = { ...DEF(), mode: s.mode, warp: { corners, fmt } };
-  switchSide(side); fitToCard(res); save(); draw(); update();
+  switchSide(side); fitToCard({ x: res.m, y: res.m, w: res.w, h: res.h }); save(); draw(); update();
 }
 
 async function undoWarp() {
@@ -786,6 +820,55 @@ document.getElementById('warp').onclick = startWarp;
 document.getElementById('warpApply').onclick = applyWarp;
 document.getElementById('warpCancel').onclick = () => { endWarp(); layout(); draw(); };
 undoBtn.onclick = undoWarp;
+
+// ---- Camera with card frame -------------------------------------------------
+const camDlg = document.getElementById('cam'), camVideo = document.getElementById('camVideo'), camFrame = document.getElementById('camFrame');
+let camStream = null;
+
+async function openCamera() {
+  if (!navigator.mediaDevices?.getUserMedia) { document.getElementById('file3').click(); return; } // e.g. plain http: native camera, no frame
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 3840 }, height: { ideal: 2160 } } });
+  } catch (e) {
+    msg.textContent = 'Camera not available. Use “Load photo” to take or pick a photo instead.';
+    return;
+  }
+  camVideo.srcObject = camStream;
+  camDlg.showModal();
+  camVideo.play().catch(() => {});
+}
+
+function stopCamera() {
+  camStream?.getTracks().forEach(t => t.stop());
+  camStream = null; camVideo.srcObject = null;
+}
+
+async function capture() {
+  const vw = camVideo.videoWidth, vh = camVideo.videoHeight;
+  if (!vw) return;
+  // Map the on-screen frame into video pixels (video uses object-fit: cover).
+  const v = camVideo.getBoundingClientRect(), f = camFrame.getBoundingClientRect();
+  const k = Math.max(v.width / vw, v.height / vh), ox = (v.width - vw * k) / 2, oy = (v.height - vh * k) / 2;
+  const toV = (x, y) => [(x - v.left - ox) / k, (y - v.top - oy) / k];
+  const [fx0, fy0] = toV(f.left, f.top), [fx1, fy1] = toV(f.right, f.bottom);
+  const mx = (fx1 - fx0) * .12, my = (fy1 - fy0) * .08; // keep some room around the frame
+  const x0 = Math.max(0, fx0 - mx), y0 = Math.max(0, fy0 - my), x1 = Math.min(vw, fx1 + mx), y1 = Math.min(vh, fy1 + my);
+  const c = document.createElement('canvas');
+  c.width = Math.round(x1 - x0); c.height = Math.round(y1 - y0);
+  c.getContext('2d').drawImage(camVideo, x0, y0, x1 - x0, y1 - y0, 0, 0, c.width, c.height);
+  camDlg.close();
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.95));
+  await setImage(blob);
+  // Start the outer lines on the frame; the card should sit close to it.
+  const sc = imgs[side].width / c.width;
+  fitToCard({ x: (fx0 - x0) * sc, y: (fy0 - y0) * sc, w: (fx1 - fx0) * sc, h: (fy1 - fy0) * sc });
+  save(); draw(); update();
+}
+
+document.querySelectorAll('[data-cam]').forEach(b => b.onclick = openCamera);
+document.getElementById('camShot').onclick = capture;
+document.getElementById('camCancel').onclick = () => camDlg.close();
+camDlg.addEventListener('close', stopCamera); // also covers Escape
 
 document.addEventListener('paste', e => {
   const item = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith('image/'));
